@@ -41,7 +41,12 @@ namespace boost {
 namespace process { 
 namespace detail { 
 
-inline std::wstring decode_utf8(const std::string& bytes)
+inline void decode_utf8(const std::string& bytes, std::wstring& res)
+{
+    utf8::utf8to32(bytes.begin(), bytes.end(), std::back_inserter(res));
+}
+
+inline std::wstring decode_utf8_inplace(const std::string& bytes)
 {
     std::wstring res;
     utf8::utf8to32(bytes.begin(), bytes.end(), std::back_inserter(res));
@@ -116,29 +121,29 @@ inline boost::shared_array<char> collection_to_win32_cmdline(const Arguments &ar
  *         the environment's content. This string is of the form 
  *         var1=value1\\0var2=value2\\0\\0. 
  */ 
-inline boost::shared_array<char> environment_to_win32_strings(const environment &env) 
+inline boost::shared_array<wchar_t> environment_to_win32_strings(const environment &env) 
 { 
-    boost::shared_array<char> envp; 
+    boost::shared_array<wchar_t> envp;
 
     if (env.empty()) 
     { 
-        envp.reset(new char[2]); 
-        ::ZeroMemory(envp.get(), 2); 
+        envp.reset(new wchar_t[2]);
+        ::ZeroMemory(envp.get(), 2 * sizeof(wchar_t));
     } 
     else 
     { 
-        std::string s; 
+        std::wstring s; 
         for (environment::const_iterator it = env.begin(); it != env.end(); ++it) 
         { 
-            s += it->first + "=" + it->second; 
+            s += decode_utf8_inplace(it->first + "=" + it->second); 
             s.push_back(0); 
         } 
 
-        envp.reset(new char[s.size() + 1]); 
+        envp.reset(new wchar_t[(s.size() + 1)*sizeof(wchar_t)]); 
 #if defined(__CYGWIN__) 
-        ::memcpy(envp.get(), s.c_str(), s.size() + 1); 
+        ::memcpy(envp.get(), s.c_str(), (s.size() + 1)*sizeof(wchar_t)); 
 #else 
-        ::memcpy_s(envp.get(), s.size() + 1, s.c_str(), s.size() + 1); 
+        ::memcpy_s(envp.get(), (s.size() + 1)*sizeof(wchar_t), s.c_str(), (s.size() + 1)*sizeof(wchar_t));
 #endif 
     } 
 
@@ -221,7 +226,7 @@ inline PROCESS_INFORMATION win32_start(const Executable &exe, const Arguments &a
         } 
     case stream_info::use_file: 
         { 
-            HANDLE h = ::CreateFileW(decode_utf8(infoin.file_).c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+            HANDLE h = ::CreateFileW(decode_utf8_inplace(infoin.file_).c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
             if (h == INVALID_HANDLE_VALUE) 
                 boost::throw_exception(boost::system::system_error(boost::system::error_code(::GetLastError(), boost::system::get_system_category()), "boost::process::detail::win32_start: CreateFile failed")); 
             chin = file_handle(h); 
@@ -261,7 +266,7 @@ inline PROCESS_INFORMATION win32_start(const Executable &exe, const Arguments &a
         } 
     case stream_info::use_file: 
         { 
-            HANDLE h = ::CreateFileW(decode_utf8(infoout.file_).c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            HANDLE h = ::CreateFileW(decode_utf8_inplace(infoout.file_).c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
             if (h == INVALID_HANDLE_VALUE) 
                 boost::throw_exception(boost::system::system_error(boost::system::error_code(::GetLastError(), boost::system::get_system_category()), "boost::process::detail::win32_start: CreateFile failed")); 
             chout = file_handle(h); 
@@ -308,7 +313,7 @@ inline PROCESS_INFORMATION win32_start(const Executable &exe, const Arguments &a
         } 
     case stream_info::use_file: 
         { 
-            HANDLE h = ::CreateFileW(decode_utf8(infoerr.file_).c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            HANDLE h = ::CreateFileW(decode_utf8_inplace(infoerr.file_).c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
             if (h == INVALID_HANDLE_VALUE) 
                 boost::throw_exception(boost::system::system_error(boost::system::error_code(::GetLastError(), boost::system::get_system_category()), "boost::process::detail::win32_start: CreateFile failed")); 
             cherr = file_handle(h); 
@@ -354,9 +359,16 @@ inline PROCESS_INFORMATION win32_start(const Executable &exe, const Arguments &a
     ::strcpy_s(workdir.get(), setup.work_directory.size() + 1, setup.work_directory.c_str()); 
 #endif 
 
-    boost::shared_array<char> envstrs = environment_to_win32_strings(env); 
-
-    if (!::CreateProcessW(decode_utf8(executable.get()).c_str(), const_cast<WCHAR*>(decode_utf8(cmdline.get()).c_str()), NULL, NULL, TRUE, 0, envstrs.get(), decode_utf8(workdir.get()).c_str(), si.get(), &pi))
+    boost::shared_array<wchar_t> envstrs = environment_to_win32_strings(env); 
+    std::wstring wenv;
+    std::wstring workingDir;
+    std::wstring wcmdline;
+    std::wstring wexecutable;
+    decode_utf8(workdir.get(), workingDir);
+    decode_utf8(cmdline.get(), wcmdline);
+    decode_utf8(executable.get(), wexecutable);
+    if (!::CreateProcessW(wexecutable.c_str(), const_cast<wchar_t*>(wcmdline.c_str()), NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT,
+        envstrs.get(), workingDir.c_str(), si.get(), &pi))
         boost::throw_exception(boost::system::system_error(boost::system::error_code(::GetLastError(), boost::system::get_system_category()), "boost::process::detail::win32_start: CreateProcess failed")); 
 
     return pi; 

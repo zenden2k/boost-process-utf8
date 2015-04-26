@@ -87,15 +87,15 @@ public:
 #ifdef GetEnvironmentStrings 
 #undef GetEnvironmentStrings 
 #endif 
-        char *environ = ::GetEnvironmentStrings(); 
+        wchar_t *environ = ::GetEnvironmentStringsW(); 
         if (!environ) 
             boost::throw_exception(boost::system::system_error(boost::system::error_code(::GetLastError(), boost::system::get_system_category()), "boost::process::self::get_environment: GetEnvironmentStrings failed")); 
         try 
         { 
-            char *env = environ; 
+            wchar_t *env = environ;
             while (*env) 
             { 
-                std::string s = env; 
+                std::string s = detail::encode_utf8(env); 
                 std::string::size_type pos = s.find('='); 
                 e.insert(boost::process::environment::value_type(s.substr(0, pos), s.substr(pos + 1))); 
                 env += s.size() + 1; 
@@ -103,10 +103,10 @@ public:
         } 
         catch (...) 
         { 
-            ::FreeEnvironmentStringsA(environ); 
+            ::FreeEnvironmentStringsW(environ); 
             throw; 
         } 
-        ::FreeEnvironmentStringsA(environ); 
+        ::FreeEnvironmentStringsW(environ); 
 #endif 
 
         return e; 

@@ -120,7 +120,7 @@ inline std::string find_executable_in_path(const std::string &file, std::string 
     { 
         wchar_t buf[MAX_PATH]; 
         wchar_t *dummy;
-        DWORD size = ::SearchPathW(path.empty() ? NULL : detail::decode_utf8(path).c_str(), detail::decode_utf8(file).c_str(), *ext, MAX_PATH, buf, &dummy);
+        DWORD size = ::SearchPathW(path.empty() ? NULL : detail::decode_utf8_inplace(path).c_str(), detail::decode_utf8_inplace(file).c_str(), *ext, MAX_PATH, buf, &dummy);
         BOOST_ASSERT(size < MAX_PATH); 
         if (size > 0) 
         { 
@@ -187,7 +187,7 @@ inline child launch(const Executable &exe, const Arguments &args, const Context 
 { 
     detail::file_handle fhstdin, fhstdout, fhstderr; 
 
-    //BOOST_ASSERT(!args.empty()); 
+    BOOST_ASSERT(!args.empty()); 
     BOOST_ASSERT(!ctx.work_directory.empty()); 
 
 #if defined(BOOST_POSIX_API) 

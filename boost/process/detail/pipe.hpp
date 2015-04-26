@@ -93,7 +93,7 @@ public:
 
 #  if defined(BOOST_PROCESS_WINDOWS_USE_NAMED_PIPE) 
         static unsigned int nextid = 0; 
-        std::string pipe = "\\\\.\\pipe\\boost_process_" + boost::lexical_cast<std::string>(::GetCurrentProcessId()) + "_" + boost::lexical_cast<std::string>(nextid++); 
+        std::string pipe = "\\\\.\\pipe\\boost_process_" + boost::lexical_cast<std::string>(::GetCurrentProcessId()) + "_" + boost::lexical_cast<std::string>(::GetCurrentThreadId()) + boost::lexical_cast<std::string>(nextid++); 
         hs[0] = ::CreateNamedPipeA(pipe.c_str(), PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED, 0, 1, 8192, 8192, 0, &sa); 
         if (hs[0] == INVALID_HANDLE_VALUE) 
             boost::throw_exception(boost::system::system_error(::GetLastError(), boost::system::system_category(), "boost::process::detail::pipe::pipe: CreateNamedPipe failed")); 

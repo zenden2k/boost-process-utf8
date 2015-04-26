@@ -38,6 +38,7 @@
 #include <boost/assert.hpp> 
 #include <string> 
 #include <vector> 
+#include "detail/win32_ops.hpp"
 
 namespace boost { 
 namespace process { 
@@ -75,10 +76,10 @@ public:
             boost::throw_exception(boost::system::system_error(boost::system::error_code(errno, boost::system::get_system_category()), "boost::process::basic_work_directory_context::basic_work_directory_context: getcwd(2) failed")); 
         work_directory = cwd.get(); 
 #elif defined(BOOST_WINDOWS_API) 
-        char cwd[MAX_PATH]; 
-        if (!::GetCurrentDirectoryA(sizeof(cwd), cwd)) 
+        wchar_t cwd[MAX_PATH]; 
+        if (!::GetCurrentDirectoryW(sizeof(cwd), cwd)) 
             boost::throw_exception(boost::system::system_error(boost::system::error_code(::GetLastError(), boost::system::get_system_category()), "boost::process::basic_work_directory_context::basic_work_directory_context: GetCurrentDirectory failed")); 
-        work_directory = cwd; 
+        work_directory = detail::encode_utf8(cwd);
 #endif 
         BOOST_ASSERT(!work_directory.empty()); 
     } 
