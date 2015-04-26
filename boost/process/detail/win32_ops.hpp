@@ -139,7 +139,7 @@ inline boost::shared_array<wchar_t> environment_to_win32_strings(const environme
             s.push_back(0); 
         } 
 
-        envp.reset(new wchar_t[(s.size() + 1)*sizeof(wchar_t)]); 
+        envp.reset(new wchar_t[(s.size() + 1)]); 
 #if defined(__CYGWIN__) 
         ::memcpy(envp.get(), s.c_str(), (s.size() + 1)*sizeof(wchar_t)); 
 #else 
