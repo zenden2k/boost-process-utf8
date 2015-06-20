@@ -38,7 +38,9 @@
 #include <boost/assert.hpp> 
 #include <string> 
 #include <vector> 
+#if defined(BOOST_WINDOWS_API) 
 #include "detail/win32_ops.hpp"
+#endif
 
 namespace boost { 
 namespace process { 
@@ -123,6 +125,10 @@ template <class Path>
 class basic_context : public basic_work_directory_context<Path>, public environment_context 
 { 
 public: 
+    virtual ~basic_context()
+    {
+        
+    }
     /** 
      * Child's stdin behavior. 
      */ 
