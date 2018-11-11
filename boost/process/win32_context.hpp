@@ -47,7 +47,7 @@ public:
     /** 
      * Win32-specific process startup information. 
      */ 
-    STARTUPINFOA *startupinfo; 
+    STARTUPINFOW *startupinfo; 
 }; 
 
 /** 

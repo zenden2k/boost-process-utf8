@@ -56,7 +56,7 @@ inline win32_child win32_launch(const Executable &exe, const Arguments &args, co
     detail::win32_setup s; 
     s.work_directory = ctx.work_directory; 
 
-    STARTUPINFOA si; 
+    STARTUPINFOW si; 
     if (!ctx.startupinfo) 
     { 
         ::ZeroMemory(&si, sizeof(si)); 

@@ -250,9 +250,15 @@ inline child launch(const Executable &exe, const Arguments &args, const Context 
     ::ZeroMemory(&si, sizeof(si)); 
     si.cb = sizeof(si); 
 
+    const win32_context* win32ctx = dynamic_cast< const win32_context*>(&ctx);
+
     detail::win32_setup s; 
     s.work_directory = ctx.work_directory; 
-    s.startupinfo = &si; 
+    if (win32ctx && win32ctx->startupinfo)
+    {
+        si = *win32ctx->startupinfo;
+    } 
+    s.startupinfo = &si;
 
     PROCESS_INFORMATION pi = detail::win32_start(exe, args, ctx.environment, behin, behout, beherr, s); 
 

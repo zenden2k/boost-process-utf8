@@ -35,6 +35,9 @@
 #include <boost/noncopyable.hpp> 
 #include <string> 
 
+// stdlib.h has #define environ _environ (probably new in VS2015) ...
+#undef environ
+
 #if defined(BOOST_POSIX_API) 
 extern "C" 
 { 
